@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "661171556918",
+    "firebase_url": "https://ahlamenelasal-default-rtdb.firebaseio.com",
+    "project_id": "ahlamenelasal",
+    "storage_bucket": "ahlamenelasal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:661171556918:android:627a58830d22e1e85c3e97",
+        "android_client_info": {
+          "package_name": "com.gaber.ahlamenelasal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "661171556918-51dqpraus3af5aamnf2qh9f2iivm8ljd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gaber.ahlamenelasal",
+            "certificate_hash": "2b6bedee72bccd95b4117ab6394f6252297a4c69"
+          }
+        },
+        {
+          "client_id": "661171556918-ff73vjuscs0gfmhqbd2jgfsu4ua73mvf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD9LgzijFIFhHjscCTum_hyvG2H-C5Xhqk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "661171556918-ff73vjuscs0gfmhqbd2jgfsu4ua73mvf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
