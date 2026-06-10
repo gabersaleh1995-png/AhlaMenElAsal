@@ -21,8 +21,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.TextFormat
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.gaber.ahlamenelasal.ui.theme.*
 import com.gaber.ahlamenelasal.ui.viewmodel.AppFont
 import com.gaber.ahlamenelasal.ui.viewmodel.AuthViewModel
 import com.gaber.ahlamenelasal.ui.viewmodel.SettingsViewModel
@@ -47,105 +47,59 @@ fun SettingsScreen(
     val useSystemTheme by settingsViewModel.useSystemTheme
     val primaryColorIndex by settingsViewModel.primaryColorIndex
     val selectedFont by settingsViewModel.selectedFont
-    val scrollState = rememberScrollState()
     val context = LocalContext.current
 
-    val createDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
+    val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         uri?.let { exportAppData(context, it, settingsViewModel) }
     }
-
-    val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
+    val loadLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { importAppData(context, it, settingsViewModel) }
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .verticalScroll(scrollState)
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
     ) {
-        Text(
-            text = "الإعدادات",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.ExtraBold,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 24.dp, top = 8.dp)
-        )
+        Spacer(Modifier.height(16.dp))
+        Text("الإعدادات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+        Text("تخصيص التطبيق حسب تفضيلاتك", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, bottom = 24.dp))
 
-        SettingsSection(title = "المظهر", icon = Icons.Default.Palette) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("استخدام سمة النظام", style = MaterialTheme.typography.bodyLarge)
-                Switch(
-                    checked = useSystemTheme,
-                    onCheckedChange = { settingsViewModel.setUseSystemTheme(it) }
-                )
-            }
-
+        // ─── Appearance ───
+        SettingsSection("المظهر", Icons.Default.Palette) {
+            SettingsToggleRow("استخدام سمة النظام", useSystemTheme) { settingsViewModel.setUseSystemTheme(it) }
             if (!useSystemTheme) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("الوضع الليلي", style = MaterialTheme.typography.bodyLarge)
-                    Switch(
-                        checked = isDarkMode,
-                        onCheckedChange = { settingsViewModel.toggleDarkMode(it) }
-                    )
-                }
+                Spacer(Modifier.height(4.dp))
+                SettingsToggleRow("الوضع الليلي", isDarkMode) { settingsViewModel.toggleDarkMode(it) }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("لون التطبيق الأساسي", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                settingsViewModel.availableColors.forEachIndexed { index, color ->
+            Spacer(Modifier.height(16.dp))
+            Text("لون التطبيق", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                settingsViewModel.availableColors.forEachIndexed { i, color ->
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .border(
-                                if (primaryColorIndex == index) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface)
-                                else BorderStroke(0.dp, Color.Transparent),
-                                CircleShape
-                            )
-                            .clickable { settingsViewModel.updateColor(index) }
+                            .size(44.dp).clip(CircleShape).background(color)
+                            .border(if (primaryColorIndex == i) BorderStroke(3.dp, MaterialTheme.colorScheme.onSurface) else BorderStroke(0.dp, Color.Transparent), CircleShape)
+                            .clickable { settingsViewModel.updateColor(i) }
                     )
                 }
             }
         }
 
-        SettingsSection(title = "الخط والقراءة", icon = Icons.Default.TextFormat) {
-            Text(
-                text = "حجم الخط: ${(fontSizeMultiplier * 100).toInt()}%",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
+        Spacer(Modifier.height(12.dp))
+
+        // ─── Typography ───
+        SettingsSection("الخط والقراءة", Icons.Default.TextFormat) {
+            Text("حجم الخط: ${(fontSizeMultiplier * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Slider(
                 value = fontSizeMultiplier,
                 onValueChange = { settingsViewModel.updateFontSize(it) },
-                valueRange = 0.8f..1.5f,
-                steps = 6,
-                colors = SliderDefaults.colors(
-                    thumbColor = MaterialTheme.colorScheme.primary,
-                    activeTrackColor = MaterialTheme.colorScheme.primary
-                )
+                valueRange = 0.8f..1.5f, steps = 6,
+                colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary)
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("نوع الخط", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
+            Text("نوع الخط", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
             AppFont.values().forEach { font ->
                 Surface(
                     onClick = { settingsViewModel.updateFont(font) },
@@ -153,132 +107,107 @@ fun SettingsScreen(
                     color = if (selectedFont == font) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = (selectedFont == font),
-                            onClick = { settingsViewModel.updateFont(font) }
-                        )
-                        Text(
-                            text = font.displayName,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
+                    Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = selectedFont == font, onClick = { settingsViewModel.updateFont(font) })
+                        Text(font.displayName, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp))
                     }
                 }
             }
         }
 
-        SettingsSection(title = "البيانات والنسخ الاحتياطي", icon = Icons.Default.Backup) {
+        Spacer(Modifier.height(12.dp))
+
+        // ─── Backup ───
+        SettingsSection("النسخ الاحتياطي", Icons.Default.Backup) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(
-                    onClick = { createDocumentLauncher.launch("ahlamenelasal_backup.json") },
+                    onClick = { saveLauncher.launch("ahlamenelasal_backup.json") },
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                    colors = ButtonDefaults.buttonColors(containerColor = MidPurple)
                 ) {
-                    Icon(Icons.Default.Backup, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("نسخ احتياطي", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Backup, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp)); Text("حفظ", fontWeight = FontWeight.Bold)
                 }
-
                 Button(
-                    onClick = { openDocumentLauncher.launch("application/json") },
+                    onClick = { loadLauncher.launch("application/json") },
                     modifier = Modifier.weight(1f).height(48.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                    colors = ButtonDefaults.buttonColors(containerColor = HoneyAmber)
                 ) {
-                    Icon(Icons.Default.Restore, contentDescription = null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("استعادة", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Restore, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp)); Text("استعادة", fontWeight = FontWeight.Bold)
                 }
             }
-            Text(
-                text = "احفظ إعداداتك المفضلة لاستعادتها لاحقاً.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 12.dp)
-            )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(Modifier.height(32.dp))
 
         Button(
-            onClick = {
-                authViewModel.logout()
-                onLogout()
-            },
-            modifier = Modifier.fillMaxWidth().height(56.dp),
+            onClick = { authViewModel.logout(); onLogout() },
+            modifier = Modifier.fillMaxWidth().height(54.dp),
             shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            colors = ButtonDefaults.buttonColors(containerColor = ErrorRed)
         ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text("تسجيل الخروج", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Icon(Icons.AutoMirrored.Filled.Logout, null)
+            Spacer(Modifier.width(10.dp))
+            Text("تسجيل الخروج", fontWeight = FontWeight.Bold)
         }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
-private fun exportAppData(context: Context, uri: Uri, viewModel: SettingsViewModel) {
-    try {
-        val backupData = JSONObject().apply {
-            put("fontSizeMultiplier", viewModel.fontSizeMultiplier.value)
-            put("isDarkMode", viewModel.isDarkMode.value)
-            put("useSystemTheme", viewModel.useSystemTheme.value)
-            put("primaryColorIndex", viewModel.primaryColorIndex.value)
-            put("selectedFont", viewModel.selectedFont.value.name)
-        }
-        context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-            outputStream.write(backupData.toString(4).toByteArray())
-        }
-        Toast.makeText(context, "تم حفظ النسخة الاحتياطية بنجاح", Toast.LENGTH_LONG).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "فشل حفظ النسخة الاحتياطية", Toast.LENGTH_LONG).show()
-    }
-}
-
-private fun importAppData(context: Context, uri: Uri, viewModel: SettingsViewModel) {
-    try {
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            val content = inputStream.bufferedReader().use { it.readText() }
-            val json = JSONObject(content)
-            viewModel.updateFontSize(json.getDouble("fontSizeMultiplier").toFloat())
-            viewModel.toggleDarkMode(json.getBoolean("isDarkMode"))
-            viewModel.setUseSystemTheme(json.getBoolean("useSystemTheme"))
-            viewModel.updateColor(json.getInt("primaryColorIndex"))
-            val fontName = json.getString("selectedFont")
-            viewModel.updateFont(AppFont.valueOf(fontName))
-            Toast.makeText(context, "تمت استعادة الإعدادات بنجاح", Toast.LENGTH_LONG).show()
-        }
-    } catch (e: Exception) {
-        Toast.makeText(context, "فشل استعادة البيانات", Toast.LENGTH_LONG).show()
+@Composable
+private fun SettingsToggleRow(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = checked, onCheckedChange = onToggle, colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = MidPurple))
     }
 }
 
 @Composable
 fun SettingsSection(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, modifier = Modifier.size(24.dp), tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
+        Column(modifier = Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 16.dp)) {
+                Icon(icon, null, tint = MidPurple, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
             }
-            Spacer(modifier = Modifier.height(16.dp))
             content()
         }
     }
+}
+
+private fun exportAppData(context: Context, uri: Uri, vm: SettingsViewModel) {
+    try {
+        val json = JSONObject().apply {
+            put("fontSizeMultiplier", vm.fontSizeMultiplier.value)
+            put("isDarkMode", vm.isDarkMode.value)
+            put("useSystemTheme", vm.useSystemTheme.value)
+            put("primaryColorIndex", vm.primaryColorIndex.value)
+            put("selectedFont", vm.selectedFont.value.name)
+        }
+        context.contentResolver.openOutputStream(uri)?.use { it.write(json.toString(4).toByteArray()) }
+        Toast.makeText(context, "تم الحفظ بنجاح ✅", Toast.LENGTH_LONG).show()
+    } catch (_: Exception) { Toast.makeText(context, "فشل الحفظ", Toast.LENGTH_LONG).show() }
+}
+
+private fun importAppData(context: Context, uri: Uri, vm: SettingsViewModel) {
+    try {
+        context.contentResolver.openInputStream(uri)?.use {
+            val json = JSONObject(it.bufferedReader().readText())
+            vm.updateFontSize(json.getDouble("fontSizeMultiplier").toFloat())
+            vm.toggleDarkMode(json.getBoolean("isDarkMode"))
+            vm.setUseSystemTheme(json.getBoolean("useSystemTheme"))
+            vm.updateColor(json.getInt("primaryColorIndex"))
+            vm.updateFont(AppFont.valueOf(json.getString("selectedFont")))
+            Toast.makeText(context, "تمت الاستعادة بنجاح ✅", Toast.LENGTH_LONG).show()
+        }
+    } catch (_: Exception) { Toast.makeText(context, "فشل الاستعادة", Toast.LENGTH_LONG).show() }
 }

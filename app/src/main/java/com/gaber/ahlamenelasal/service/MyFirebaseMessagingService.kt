@@ -48,7 +48,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // تأكد من وجود أيقونة صالحة
+            .setSmallIcon(R.drawable.ic_notification) // استخدام الأيقونة الموجودة فعلياً
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)

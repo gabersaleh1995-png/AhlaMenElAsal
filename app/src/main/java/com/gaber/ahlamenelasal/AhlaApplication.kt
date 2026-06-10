@@ -14,16 +14,16 @@ class AhlaApplication : Application() {
         OneSignal.Debug.logLevel = LogLevel.VERBOSE
 
         // OneSignal Initialization
-        OneSignal.initWithContext(this, "db34f426-32ac-4093-8578-d76f80780237")
+        OneSignal.initWithContext(this as android.content.Context, "db34f426-32ac-4093-8578-d76f80780237")
         
         // إعداد Cloudinary بناءً على صورتك رقم 45
-        val config = mapOf(
+        val config: Map<String, Any> = mapOf(
             "cloud_name" to "daf4gj3p9",
             "secure" to true
         )
         
         try {
-            MediaManager.init(this, config)
+            MediaManager.init(this as android.content.Context, config)
         } catch (e: Exception) {
             // تم التهيئة مسبقاً
         }

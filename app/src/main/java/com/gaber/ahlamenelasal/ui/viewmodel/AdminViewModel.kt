@@ -151,7 +151,10 @@ class AdminViewModel : ViewModel() {
                 Toast.makeText(context, "تم الحفظ بنجاح: $title", Toast.LENGTH_SHORT).show()
                 val (notifTitle, notifBody) = when(type) {
                     "TOPIC_IMAGE", "TOPIC_VIDEO" -> "موضوع جديد: $title 🍯" to (description.ifBlank { "شاهد الموضوع الجديد" }).take(100)
-                    "PDF" -> "كتاب PDF جديد 📚" to "تم إضافة: $title"
+                    "PDF" -> "كتاب PDF جديد 📚" to "تم إضافة: $title في قسم المكتبة"
+                    "IMAGE" -> "صورة جديدة في المعرض 🖼️" to "تم إضافة: $title"
+                    "VIDEO" -> "فيديو جديد 🎬" to "تم إضافة: $title"
+                    "AUDIO" -> "تسجيل صوتي جديد 🎙️" to "تم إضافة: $title"
                     else -> "محتوى جديد 🍯" to "تم إضافة: $title"
                 }
                 NotificationHelper.notifyAll(notifTitle, notifBody)

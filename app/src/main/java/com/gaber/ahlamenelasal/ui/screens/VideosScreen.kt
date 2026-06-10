@@ -21,6 +21,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +35,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.gaber.ahlamenelasal.data.model.VideoItem
+import com.gaber.ahlamenelasal.ui.theme.*
 import com.gaber.ahlamenelasal.ui.viewmodel.VideosViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,45 +43,34 @@ import com.gaber.ahlamenelasal.ui.viewmodel.VideosViewModel
 fun VideosScreen(videosViewModel: VideosViewModel = viewModel()) {
     val videos = videosViewModel.videos
     val context = LocalContext.current
-    
-    // حالة لتتبع الفيديو المختار للتشغيل الداخلي
-    var selectedVideoUrl by remember { mutableStateOf<String?>(null) }
-    var selectedVideoTitle by remember { mutableStateOf("") }
+    var selectedUrl by remember { mutableStateOf<String?>(null) }
+    var selectedTitle by remember { mutableStateOf("") }
 
-    if (selectedVideoUrl != null) {
-        // مشغل الفيديو الداخلي
+    if (selectedUrl != null) {
         Column(modifier = Modifier.fillMaxSize().background(Color.Black)) {
             TopAppBar(
-                title = { Text(selectedVideoTitle, color = Color.White, style = MaterialTheme.typography.titleMedium) },
-                navigationIcon = {
-                    IconButton(onClick = { selectedVideoUrl = null }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = Color.White)
-                    }
-                },
+                title = { Text(selectedTitle, color = Color.White, style = MaterialTheme.typography.titleSmall) },
+                navigationIcon = { IconButton(onClick = { selectedUrl = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "رجوع", tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Black)
             )
-            
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                InternalVideoPlayer(selectedVideoUrl!!)
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                InternalVideoPlayer(selectedUrl!!)
             }
         }
     } else {
-        // قائمة الفيديوهات
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(horizontal = 20.dp)
         ) {
-            Text(
-                text = "مكتبة الفيديوهات التعليمية",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            Spacer(Modifier.height(16.dp))
+            Text("مكتبة الفيديوهات", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text("فيديوهات تعليمية ودينية", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp, bottom = 20.dp))
 
             if (videos.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🎬", fontSize = 48.sp); Spacer(Modifier.height(12.dp))
+                        CircularProgressIndicator(color = MidPurple)
+                    }
                 }
             } else {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -87,27 +79,15 @@ fun VideosScreen(videosViewModel: VideosViewModel = viewModel()) {
                             video = video,
                             onPlay = {
                                 if (video.url.contains("cloudinary.com") || video.url.endsWith(".mp4")) {
-                                    // تشغيل داخلي للفيديوهات المرفوعة
-                                    selectedVideoUrl = video.url
-                                    selectedVideoTitle = video.title
+                                    selectedUrl = video.url; selectedTitle = video.title
                                 } else {
-                                    // فتح خارجي لليوتيوب وفيسبوك
-                                    try {
-                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(video.url))
-                                        context.startActivity(intent)
-                                    } catch (e: Exception) {}
+                                    try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(video.url))) } catch (_: Exception) {}
                                 }
                             },
                             onShare = {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "${video.title}\n${video.url}")
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "مشاركة الفيديو عبر:"))
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "${video.title}\n${video.url}") }, "مشاركة الفيديو"))
                             },
-                            onDownload = {
-                                downloadFile(context, video.url, video.title, "mp4")
-                            }
+                            onDownload = { downloadFile(context, video.url, video.title, "mp4") }
                         )
                     }
                 }
@@ -116,142 +96,80 @@ fun VideosScreen(videosViewModel: VideosViewModel = viewModel()) {
     }
 }
 
-private fun downloadFile(context: Context, url: String, title: String, extension: String) {
+private fun downloadFile(context: Context, url: String, title: String, ext: String) {
     try {
-        val downloadUrl = if (url.contains("drive.google.com")) {
-            transformGoogleDriveUrl(url)
-        } else {
-            url
-        }
-        
-        val request = DownloadManager.Request(Uri.parse(downloadUrl))
-            .setTitle(title)
-            .setDescription("جاري تحميل الملف...")
+        val dlUrl = if (url.contains("drive.google.com")) transformGoogleDriveUrl(url) else url
+        val req = DownloadManager.Request(Uri.parse(dlUrl)).setTitle(title).setDescription("جاري التحميل...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$title.$extension")
-        
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        dm.enqueue(request)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$title.$ext")
+        (context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager).enqueue(req)
         Toast.makeText(context, "بدأ التحميل...", Toast.LENGTH_SHORT).show()
-    } catch (e: Exception) {
-        Toast.makeText(context, "خطأ في التحميل: ${e.message}", Toast.LENGTH_LONG).show()
-    }
+    } catch (e: Exception) { Toast.makeText(context, "خطأ: ${e.message}", Toast.LENGTH_LONG).show() }
 }
 
 @OptIn(UnstableApi::class)
 @Composable
 fun InternalVideoPlayer(videoUrl: String) {
     val context = LocalContext.current
-    
-    // إنشاء ExoPlayer
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(videoUrl)
-            setMediaItem(mediaItem)
-            prepare()
-            playWhenReady = true
+            setMediaItem(MediaItem.fromUri(videoUrl)); prepare(); playWhenReady = true
         }
     }
-
-    // التخلص من اللاعب عند الخروج من الشاشة
-    DisposableEffect(Unit) {
-        onDispose {
-            exoPlayer.release()
-        }
-    }
-
+    DisposableEffect(Unit) { onDispose { exoPlayer.release() } }
     AndroidView(
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                player = exoPlayer
-                useController = true
-                setBackgroundColor(android.graphics.Color.BLACK)
-            }
-        },
-        modifier = Modifier.fillMaxWidth().aspectRatio(16/9f)
+        factory = { ctx -> PlayerView(ctx).apply { player = exoPlayer; useController = true; setBackgroundColor(android.graphics.Color.BLACK) } },
+        modifier = Modifier.fillMaxWidth().aspectRatio(16 / 9f)
     )
 }
 
 @Composable
 fun VideoCard(video: VideoItem, onPlay: () -> Unit, onShare: () -> Unit, onDownload: () -> Unit) {
+    val isInternal = video.url.contains("cloudinary.com") || video.url.endsWith(".mp4")
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onPlay() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp)
+        modifier = Modifier.fillMaxWidth().clickable { onPlay() },
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
+            // Thumbnail area
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(180.dp)
-                    .background(Color.DarkGray),
+                modifier = Modifier.fillMaxWidth().height(180.dp)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF1A1A22), Color(0xFF2D1B4E)))),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color.White.copy(alpha = 0.8f)
-                )
-                
+                Box(
+                    modifier = Modifier.size(64.dp).clip(RoundedCornerShape(50)).background(MidPurple.copy(alpha = 0.8f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.PlayArrow, null, tint = Color.White, modifier = Modifier.size(36.dp))
+                }
                 if (video.category.isNotBlank()) {
                     Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = RoundedCornerShape(8.dp)
+                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp),
+                        color = HoneyGold, shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text(
-                            text = video.category,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Text(video.category, color = DeepPurple, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
+                }
+                Surface(
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                    color = if (isInternal) SuccessGreen.copy(alpha = 0.9f) else MidPurple.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        if (isInternal) "داخلي" else "خارجي",
+                        color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
                 }
             }
-
-            Row(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = video.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    val isInternal = video.url.contains("cloudinary.com") || video.url.endsWith(".mp4")
-                    Text(
-                        text = if (isInternal) "مشاهدة داخل التطبيق" else "مشاهدة عبر الرابط الخارجي",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (isInternal) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                Row {
-                    IconButton(onClick = onDownload) {
-                        Icon(
-                            imageVector = Icons.Default.Download,
-                            contentDescription = "تحميل",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                    IconButton(onClick = onShare) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "مشاركة",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    }
-                }
+            Row(modifier = Modifier.padding(14.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(video.title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
+                IconButton(onClick = onDownload) { Icon(Icons.Default.Download, "تحميل", tint = MaterialTheme.colorScheme.primary) }
+                IconButton(onClick = onShare) { Icon(Icons.Default.Share, "مشاركة", tint = MaterialTheme.colorScheme.secondary) }
             }
         }
     }

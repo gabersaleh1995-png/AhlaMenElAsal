@@ -9,15 +9,15 @@ activityCompose = "1.12.4"
 kotlin = "2.0.21"
 composeBom = "2024.09.00"
 googleServices = "4.4.2"
-firebaseBom = "34.10.0"
+firebaseBom = "34.14.1"
 navigationCompose = "2.9.7"
 gson = "2.12.1"
 cloudinary = "3.1.2"
 media3 = "1.5.1"
 okhttp = "4.12.0"
 coil = "2.7.0"
-onesignal = "5.1.20"
-google-auth = "21.3.0"
+onesignal = "5.9.3"
+google-auth = "21.6.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

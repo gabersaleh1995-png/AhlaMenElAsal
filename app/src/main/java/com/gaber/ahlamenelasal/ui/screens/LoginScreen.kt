@@ -1,33 +1,35 @@
 package com.gaber.ahlamenelasal.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gaber.ahlamenelasal.R
+import com.gaber.ahlamenelasal.ui.theme.*
 import com.gaber.ahlamenelasal.ui.viewmodel.AuthViewModel
-
-import androidx.compose.ui.platform.LocalContext
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.gaber.ahlamenelasal.R
 
 @Composable
 fun LoginScreen(
@@ -40,21 +42,18 @@ fun LoginScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var resetEmail by remember { mutableStateOf("") }
-    
+
     val isLoading by authViewModel.isLoading
     val errorMessage by authViewModel.errorMessage
     val context = LocalContext.current
 
-    // إعداد تسجيل الدخول بجوجل
     val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
         .requestIdToken(context.getString(R.string.default_web_client_id))
         .requestEmail()
         .build()
     val googleSignInClient = GoogleSignIn.getClient(context, gso)
 
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
             val account = task.getResult(ApiException::class.java)!!
@@ -64,15 +63,15 @@ fun LoginScreen(
         }
     }
 
-    // نافذة استعادة كلمة المرور
+    // Reset password dialog
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("استعادة كلمة المرور") },
+            title = { Text("استعادة كلمة المرور", fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("أدخل بريدك الإلكتروني لإرسال رابط تعيين كلمة المرور الجديدة:")
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين:")
+                    Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
                         value = resetEmail,
                         onValueChange = { resetEmail = it },
@@ -84,163 +83,168 @@ fun LoginScreen(
                 }
             },
             confirmButton = {
-                Button(
-                    onClick = {
-                        authViewModel.resetPassword(resetEmail) { success, message ->
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                            if (success) showResetDialog = false
-                        }
+                Button(onClick = {
+                    authViewModel.resetPassword(resetEmail) { success, message ->
+                        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        if (success) showResetDialog = false
                     }
-                ) {
-                    Text("إرسال")
-                }
+                }) { Text("إرسال") }
             },
             dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) {
-                    Text("إلغاء")
-                }
+                TextButton(onClick = { showResetDialog = false }) { Text("إلغاء") }
             }
         )
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.linearGradient(listOf(DeepPurple, Color(0xFF2D1B4E), Color(0xFF1A1040))))
     ) {
-        Card(
+        // Top decoration
+        Box(
+            modifier = Modifier
+                .size(250.dp)
+                .align(Alignment.TopCenter)
+                .offset(y = (-60).dp)
+                .background(
+                    Brush.radialGradient(listOf(HoneyGold.copy(alpha = 0.2f), Color.Transparent)),
+                    shape = androidx.compose.foundation.shape.CircleShape
+                )
+        )
+
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            shape = RoundedCornerShape(32.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                .align(Alignment.Center)
+                .padding(horizontal = 28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
+            // Logo
+            Box(
                 modifier = Modifier
-                    .padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .size(80.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(listOf(HoneyGold, HoneyAmber))),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "تسجيل الدخول",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                
-                Text(
-                    text = "أهلاً بك مجدداً في أحلى من العسل 🐝",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+                Text("🍯", fontSize = 38.sp)
+            }
 
-                Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "أحلى من العسل",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = "سجّل دخولك للمتابعة",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.55f),
+                modifier = Modifier.padding(top = 6.dp, bottom = 32.dp)
+            )
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("البريد الإلكتروني") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("كلمة المرور") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                    trailingIcon = {
-                        val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(imageVector = image, contentDescription = null)
-                        }
-                    },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    singleLine = true
-                )
-
-                TextButton(
-                    onClick = { 
-                        resetEmail = email
-                        showResetDialog = true
-                    },
-                    modifier = Modifier.align(Alignment.End)
+            // Card
+            Card(
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = "نسيت كلمة المرور؟",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("البريد الإلكتروني") },
+                        leadingIcon = { Icon(Icons.Default.Email, null, tint = MidPurple) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MidPurple,
+                            unfocusedBorderColor = BorderLight
+                        )
                     )
-                }
-
-                if (errorMessage != null) {
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp)
+                    Spacer(modifier = Modifier.height(14.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("كلمة المرور") },
+                        leadingIcon = { Icon(Icons.Default.Lock, null, tint = MidPurple) },
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    null, tint = TextHint
+                                )
+                            }
+                        },
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MidPurple,
+                            unfocusedBorderColor = BorderLight
+                        )
                     )
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (isLoading) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                } else {
-                    Button(
-                        onClick = { authViewModel.login(email, password, onLoginSuccess) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp)
+                    TextButton(
+                        onClick = { resetEmail = email; showResetDialog = true },
+                        modifier = Modifier.align(Alignment.End)
                     ) {
+                        Text("نسيت كلمة المرور؟", color = MidPurple, style = MaterialTheme.typography.labelLarge)
+                    }
+
+                    if (errorMessage != null) {
                         Text(
-                            "دخول",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = errorMessage!!,
+                            color = ErrorRed,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedButton(
-                        onClick = { launcher.launch(googleSignInClient.signInIntent) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text("تسجيل بواسطة Google", fontWeight = FontWeight.Medium)
+                    if (isLoading) {
+                        CircularProgressIndicator(color = MidPurple, modifier = Modifier.padding(8.dp))
+                    } else {
+                        Button(
+                            onClick = { authViewModel.login(email, password, onLoginSuccess) },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MidPurple,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text("دخول", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = { launcher.launch(googleSignInClient.signInIntent) },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextPrimary),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderLight)
+                        ) {
+                            Text("تسجيل بواسطة Google", fontWeight = FontWeight.Medium)
+                        }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "ليس لديك حساب؟ ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "إنشاء حساب",
-                        modifier = Modifier.clickable { onNavigateToSignUp() },
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(horizontalArrangement = Arrangement.Center) {
+                        Text("ليس لديك حساب؟ ", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "إنشاء حساب",
+                            modifier = Modifier.clickable { onNavigateToSignUp() },
+                            color = MidPurple,
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
         }

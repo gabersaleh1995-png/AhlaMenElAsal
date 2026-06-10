@@ -33,7 +33,6 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
-import com.gaber.ahlamenelasal.data.BibleRepository
 import com.gaber.ahlamenelasal.navigation.Screen
 import com.gaber.ahlamenelasal.ui.screens.*
 import com.gaber.ahlamenelasal.ui.theme.AhlaMenElAsalTheme
@@ -54,10 +53,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // --- تهيئة OneSignal v5 ---
-        OneSignal.Debug.logLevel = LogLevel.VERBOSE
-        OneSignal.initWithContext(this, "db34f426-32ac-4093-8578-d76f80780237")
-        
         // طلب إذن الإشعارات
         CoroutineScope(Dispatchers.Main).launch {
             OneSignal.Notifications.requestPermission(true)
@@ -84,7 +79,6 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             
             LaunchedEffect(Unit) {
-                BibleRepository.loadBibleOnce(context)
                 FirebaseMessaging.getInstance().subscribeToTopic("all")
                 saveOneSignalIdToFirestore()
             }
@@ -191,20 +185,11 @@ fun MainScreen(authViewModel: AuthViewModel, settingsViewModel: SettingsViewMode
                 composable(Screen.Login.route) { LoginScreen(onLoginSuccess = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Login.route) { inclusive = true } } }, onNavigateToSignUp = { navController.navigate(Screen.SignUp.route) }) }
                 composable(Screen.SignUp.route) { SignUpScreen(onSignUpSuccess = { navController.navigate(Screen.Home.route) { popUpTo(Screen.SignUp.route) { inclusive = true } } }, onNavigateToLogin = { navController.navigate(Screen.Login.route) }) }
                 composable(Screen.Home.route) { HomeScreen(onNavigate = { screen -> navController.navigate(screen.route) }) }
-                composable(Screen.Bible.route) { BibleScreen(onBookClick = { book -> navController.navigate(Screen.BibleChapters.createRoute(book.name, book.chapters)) }) }
-                composable(route = Screen.BibleChapters.route, arguments = listOf(navArgument("bookName") { type = NavType.StringType }, navArgument("chapterCount") { type = NavType.IntType })) { backStackEntry ->
-                    ChaptersScreen(backStackEntry.arguments?.getString("bookName") ?: "", backStackEntry.arguments?.getInt("chapterCount") ?: 0, onChapterClick = { navController.navigate(Screen.BibleVerses.createRoute(backStackEntry.arguments?.getString("bookName") ?: "", it)) })
-                }
-                composable(route = Screen.BibleVerses.route, arguments = listOf(navArgument("bookName") { type = NavType.StringType }, navArgument("chapterNumber") { type = NavType.IntType })) { backStackEntry ->
-                    VersesScreen(backStackEntry.arguments?.getString("bookName") ?: "", backStackEntry.arguments?.getInt("chapterNumber") ?: 1)
-                }
                 
                 composable(Screen.Library.route) { LibraryScreen() }
                 composable(Screen.AudioLibrary.route) { AudioLibraryScreen() }
                 composable(Screen.Gallery.route) { GalleryScreen(onBack = { navController.popBackStack() }) }
                 composable(Screen.Topics.route) { TopicsScreen(onBack = { navController.popBackStack() }) }
-                composable(Screen.Agbeya.route) { AgbeyaScreen(onPrayerClick = { navController.navigate(Screen.AgbeyaContent.createRoute(it)) }) }
-                composable(route = Screen.AgbeyaContent.route, arguments = listOf(navArgument("prayerName") { type = NavType.StringType })) { backStackEntry -> AgbeyaContentScreen(backStackEntry.arguments?.getString("prayerName") ?: "") }
 
                 composable(Screen.Chat.route) { ChatSelectionScreen(onNavigateToGroup = { navController.navigate(Screen.GroupChat.route) }, onNavigateToAdmin = { navController.navigate(Screen.AdminChat.createRoute(currentUser?.uid ?: "unknown", currentUser?.displayName ?: "أنا")) }) }
                 composable(Screen.GroupChat.route) { ChatScreen(chatId = "group_all", title = "دردشة الجماعة", onBack = { navController.popBackStack() }) }
@@ -212,7 +197,6 @@ fun MainScreen(authViewModel: AuthViewModel, settingsViewModel: SettingsViewMode
 
                 composable(Screen.Meetings.route) { MeetingsScreen() }
                 composable(Screen.Videos.route) { VideosScreen() }
-                composable(Screen.Commentary.route) { CommentaryScreen() }
                 composable(Screen.Settings.route) { SettingsScreen(settingsViewModel, authViewModel, onLogout = { navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } } }) }
                 composable(Screen.WeeklyQuestion.route) { WeeklyQuestionScreen() }
                 

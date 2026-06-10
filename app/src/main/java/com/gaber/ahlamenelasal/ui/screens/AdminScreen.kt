@@ -206,7 +206,6 @@ fun TopicUploader(adminViewModel: AdminViewModel) {
                 if (title.isNotBlank() && directLink.isNotBlank()) {
                     val type = if (mediaType == "IMAGE") "TOPIC_IMAGE" else "TOPIC_VIDEO"
                     adminViewModel.saveDirectLink(context, title, directLink, type, description = description)
-                    NotificationHelper.notifyAll("موضوع جديد: $title 🍯", description.take(100) + "...")
                     title = ""; description = ""; directLink = ""; Toast.makeText(context, "تم النشر", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(context, "يرجى إدخال العنوان والرابط", Toast.LENGTH_SHORT).show()
@@ -350,7 +349,7 @@ fun MeetingManagerSection() {
 
 @Composable
 fun UniversalFileUploader(adminViewModel: AdminViewModel) {
-    val categories = listOf("المكتبة العامة", "الكتاب المقدس PDF", "الأجبية PDF")
+    val categories = listOf("المكتبة العامة")
     var selectedCategory by remember { mutableStateOf(categories[0]) }
     var folderName by remember { mutableStateOf("") }
     var subFolderName by remember { mutableStateOf("") }

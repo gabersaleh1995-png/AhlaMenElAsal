@@ -5,11 +5,15 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.googlefonts.Font
 import androidx.compose.ui.text.googlefonts.GoogleFont
+import androidx.core.view.WindowCompat
 import com.gaber.ahlamenelasal.R
 import com.gaber.ahlamenelasal.ui.viewmodel.AppFont
 
@@ -19,43 +23,65 @@ private val provider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
-private fun getFontFamily(appFont: AppFont): FontFamily {
+fun getFontFamily(appFont: AppFont): FontFamily {
     return when (appFont) {
-        AppFont.Cairo -> FontFamily(Font(googleFont = GoogleFont("Cairo"), fontProvider = provider))
-        AppFont.Amiri -> FontFamily(Font(googleFont = GoogleFont("Amiri"), fontProvider = provider))
+        AppFont.Cairo  -> FontFamily(Font(googleFont = GoogleFont("Cairo"),  fontProvider = provider))
+        AppFont.Amiri  -> FontFamily(Font(googleFont = GoogleFont("Amiri"),  fontProvider = provider))
         AppFont.Lateef -> FontFamily(Font(googleFont = GoogleFont("Lateef"), fontProvider = provider))
-        else -> FontFamily.Default
+        else           -> FontFamily.Default
     }
 }
 
+// ─── Dark Color Scheme ────────────────────────────────────────
 private val DarkColorScheme = darkColorScheme(
-    primary = HoneyPrimaryDark,
-    secondary = HoneySecondaryDark,
-    tertiary = HoneyTertiaryDark,
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
-    surface = Color(0xFF1C1B1F),
-    onSurface = Color.White
+    primary            = HoneyGold,
+    onPrimary          = DeepPurple,
+    primaryContainer   = Color(0xFF2D1B4E),
+    onPrimaryContainer = HoneyLight,
+    secondary          = HoneyAmber,
+    onSecondary        = DeepPurple,
+    secondaryContainer = DarkCard,
+    onSecondaryContainer = Color(0xFFE0D5FF),
+    tertiary           = FuchsiaAccent,
+    onTertiary         = Color.White,
+    background         = DarkBg,
+    onBackground       = Color(0xFFF5F0FF),
+    surface            = DarkSurface,
+    onSurface          = Color(0xFFF5F0FF),
+    surfaceVariant     = DarkCard,
+    onSurfaceVariant   = Color(0xFFCDC4E8),
+    outline            = BorderDark,
+    error              = ErrorRed,
+    onError            = Color.White
 )
 
+// ─── Light Color Scheme ───────────────────────────────────────
 private val LightColorScheme = lightColorScheme(
-    primary = HoneyPrimary,
-    secondary = HoneySecondary,
-    tertiary = HoneyTertiary,
-    onPrimary = Color.Black,
-    onSecondary = Color.Black,
-    onTertiary = Color.Black,
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F)
+    primary            = MidPurple,
+    onPrimary          = Color.White,
+    primaryContainer   = LightCard,
+    onPrimaryContainer = DeepPurple,
+    secondary          = HoneyAmber,
+    onSecondary        = Color.White,
+    secondaryContainer = HoneyLight,
+    onSecondaryContainer = Color(0xFF92400E),
+    tertiary           = FuchsiaAccent,
+    onTertiary         = Color.White,
+    background         = LavenderBg,
+    onBackground       = TextPrimary,
+    surface            = LightSurface,
+    onSurface          = TextPrimary,
+    surfaceVariant     = LightCard,
+    onSurfaceVariant   = TextSecondary,
+    outline            = BorderLight,
+    error              = ErrorRed,
+    onError            = Color.White
 )
 
 @Composable
 fun AhlaMenElAsalTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,          // أوقفنا dynamic color للحفاظ على الهوية البصرية
     customPrimaryColor: Color? = null,
     fontSizeMultiplier: Float = 1.0f,
     appFont: AppFont = AppFont.Default,
@@ -67,38 +93,50 @@ fun AhlaMenElAsalTheme(
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
         darkTheme -> {
-            if (customPrimaryColor != null) DarkColorScheme.copy(primary = customPrimaryColor, onPrimary = Color.White)
+            if (customPrimaryColor != null)
+                DarkColorScheme.copy(primary = customPrimaryColor, onPrimary = Color.White)
             else DarkColorScheme
         }
         else -> {
-            if (customPrimaryColor != null) LightColorScheme.copy(primary = customPrimaryColor, onPrimary = Color.White)
+            if (customPrimaryColor != null)
+                LightColorScheme.copy(primary = customPrimaryColor, onPrimary = Color.White)
             else LightColorScheme
         }
     }
 
+    // Status bar color
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
+    }
+
     val fontFamily = getFontFamily(appFont)
-    val baseTypography = Typography
+    val base = Typography
     val scaledTypography = Typography(
-        displayLarge = baseTypography.displayLarge.copy(fontSize = baseTypography.displayLarge.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        displayMedium = baseTypography.displayMedium.copy(fontSize = baseTypography.displayMedium.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        displaySmall = baseTypography.displaySmall.copy(fontSize = baseTypography.displaySmall.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        headlineLarge = baseTypography.headlineLarge.copy(fontSize = baseTypography.headlineLarge.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        headlineMedium = baseTypography.headlineMedium.copy(fontSize = baseTypography.headlineMedium.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        headlineSmall = baseTypography.headlineSmall.copy(fontSize = baseTypography.headlineSmall.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        titleLarge = baseTypography.titleLarge.copy(fontSize = baseTypography.titleLarge.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        titleMedium = baseTypography.titleMedium.copy(fontSize = baseTypography.titleMedium.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        titleSmall = baseTypography.titleSmall.copy(fontSize = baseTypography.titleSmall.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        bodyLarge = baseTypography.bodyLarge.copy(fontSize = baseTypography.bodyLarge.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        bodyMedium = baseTypography.bodyMedium.copy(fontSize = baseTypography.bodyMedium.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        bodySmall = baseTypography.bodySmall.copy(fontSize = baseTypography.bodySmall.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        labelLarge = baseTypography.labelLarge.copy(fontSize = baseTypography.labelLarge.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        labelMedium = baseTypography.labelMedium.copy(fontSize = baseTypography.labelMedium.fontSize * fontSizeMultiplier, fontFamily = fontFamily),
-        labelSmall = baseTypography.labelSmall.copy(fontSize = baseTypography.labelSmall.fontSize * fontSizeMultiplier, fontFamily = fontFamily)
+        displayLarge    = base.displayLarge.copy(fontSize    = base.displayLarge.fontSize    * fontSizeMultiplier, fontFamily = fontFamily),
+        displayMedium   = base.displayMedium.copy(fontSize   = base.displayMedium.fontSize   * fontSizeMultiplier, fontFamily = fontFamily),
+        displaySmall    = base.displaySmall.copy(fontSize    = base.displaySmall.fontSize    * fontSizeMultiplier, fontFamily = fontFamily),
+        headlineLarge   = base.headlineLarge.copy(fontSize   = base.headlineLarge.fontSize   * fontSizeMultiplier, fontFamily = fontFamily),
+        headlineMedium  = base.headlineMedium.copy(fontSize  = base.headlineMedium.fontSize  * fontSizeMultiplier, fontFamily = fontFamily),
+        headlineSmall   = base.headlineSmall.copy(fontSize   = base.headlineSmall.fontSize   * fontSizeMultiplier, fontFamily = fontFamily),
+        titleLarge      = base.titleLarge.copy(fontSize      = base.titleLarge.fontSize      * fontSizeMultiplier, fontFamily = fontFamily),
+        titleMedium     = base.titleMedium.copy(fontSize     = base.titleMedium.fontSize     * fontSizeMultiplier, fontFamily = fontFamily),
+        titleSmall      = base.titleSmall.copy(fontSize      = base.titleSmall.fontSize      * fontSizeMultiplier, fontFamily = fontFamily),
+        bodyLarge       = base.bodyLarge.copy(fontSize       = base.bodyLarge.fontSize       * fontSizeMultiplier, fontFamily = fontFamily),
+        bodyMedium      = base.bodyMedium.copy(fontSize      = base.bodyMedium.fontSize      * fontSizeMultiplier, fontFamily = fontFamily),
+        bodySmall       = base.bodySmall.copy(fontSize       = base.bodySmall.fontSize       * fontSizeMultiplier, fontFamily = fontFamily),
+        labelLarge      = base.labelLarge.copy(fontSize      = base.labelLarge.fontSize      * fontSizeMultiplier, fontFamily = fontFamily),
+        labelMedium     = base.labelMedium.copy(fontSize     = base.labelMedium.fontSize     * fontSizeMultiplier, fontFamily = fontFamily),
+        labelSmall      = base.labelSmall.copy(fontSize      = base.labelSmall.fontSize      * fontSizeMultiplier, fontFamily = fontFamily)
     )
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = scaledTypography,
-        content = content
+        typography  = scaledTypography,
+        content     = content
     )
 }
